@@ -140,12 +140,21 @@ tbody td{padding:0 14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;w
 .sheet .ft{display:flex;gap:10px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--b);flex-wrap:wrap}
 @media(min-width:700px){.ov{align-items:center}.sheet{border-radius:18px}}
 @keyframes fd{from{opacity:0}}@keyframes up{from{transform:translateY(24px);opacity:0}}
+
+/* ── Loader: modal (writes) + slim pill (background reads) ── */
 #ld{position:fixed;inset:0;z-index:100;background:rgba(10,20,40,.45);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 #ld .lc{background:var(--s);border-radius:18px;padding:26px 30px;width:230px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 #ld .pc{font-size:38px;font-weight:800;letter-spacing:-.03em;color:var(--p)}
 #ld .tr{height:7px;border-radius:7px;background:var(--pl);margin:12px 0 8px;overflow:hidden}
 #ld .tr i{display:block;height:100%;width:0;background:var(--p);border-radius:7px;transition:width .12s linear}
-#pill{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:90;background:var(--p2);color:#fff;padding:7px 16px;border-radius:99px;font-weight:700;font-size:13px;box-shadow:var(--sh)}
+
+/* Slim top-of-screen progress bar for silent (read) requests */
+#bar{position:fixed;top:0;left:0;right:0;height:3px;z-index:130;background:transparent;pointer-events:none;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:var(--p);transition:width .25s ease,opacity .3s ease;opacity:0}
+#bar.on i{opacity:1}
+
+/* subtle pill for slow reads */
+#pill{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:90;background:var(--p2);color:#fff;padding:7px 16px;border-radius:99px;font-weight:700;font-size:13px;box-shadow:var(--sh);opacity:.92}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:120;display:flex;flex-direction:column;gap:8px;align-items:center;width:92%;max-width:420px;pointer-events:none}
 #toast div{background:var(--t);color:var(--s);padding:11px 16px;border-radius:12px;font-weight:600;box-shadow:var(--sh);animation:up .2s}
 #toast div.err{background:var(--bad);color:#fff}
@@ -192,6 +201,9 @@ tbody td{padding:0 14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;w
 <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6zM14 3v5h5M9 13h6M9 17h6"/></symbol>
 </defs></svg>
 
+<!-- slim progress bar (reads only) -->
+<div id="bar"><i></i></div>
+
 <!-- LOGIN -->
 <section id="login" hidden>
   <form class="lbox" id="lf" autocomplete="on">
@@ -229,12 +241,21 @@ tbody td{padding:0 14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;w
 
 <div id="mods"></div>
 <div id="ld" hidden><div class="lc"><div class="pc" id="ldp">0%</div><div class="tr"><i id="ldb"></i></div><div class="muted" style="font-size:12px">Please wait…</div></div></div>
-<div id="pill" hidden>0%</div>
+<div id="pill" hidden>Loading…</div>
 <div id="toast"></div>
 
 <script>
 /* ═══════════ Configuration ═══════════ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwgCsBpwYBjZnnNYSt2H9gEiGP0hKQCT_WyD-RUcs-uCgNop9F-9pK6WcA9wzdnRnah/exec';
+
+/* Actions that MUTATE data → use the full modal loader. Everything else = silent read. */
+const WRITE_ACTIONS = new Set([
+  'login', 'logout',
+  'clientSave', 'policyAssign', 'policyCancel',
+  'paymentRecord',
+  'productSave', 'userSave', 'userPassword',
+  'settingsSave', 'passwordChange'
+]);
 
 /* ═══════════ Utilities ═══════════ */
 const $ = (s, r = document) => r.querySelector(s);
@@ -257,35 +278,84 @@ function toast(msg, kind) {
   $('#toast').appendChild(d); setTimeout(() => d.remove(), 3600);
 }
 
-/* ═══════════ Loader (percentage) ═══════════ */
+/* ═══════════ Loader: modal for writes, slim bar for reads ═══════════ */
 const Loader = {
-  n: 0, p: 0, t: null, h: null, mode: 'modal',
-  paint() { const v = Math.floor(this.p) + '%'; $('#ldp').textContent = v; $('#ldb').style.width = v; $('#pill').textContent = v; },
-  start(mode) {
+  /* ── full modal (writes only) ── */
+  n: 0, p: 0, t: null, h: null,
+  paint() { const v = Math.floor(this.p) + '%'; $('#ldp').textContent = v; $('#ldb').style.width = v; },
+  start() {
     clearTimeout(this.h); this.n++;
-    if (this.n === 1) { this.p = 0; this.mode = mode; this.t = setInterval(() => { this.p += (92 - this.p) * 0.07 + 0.3; if (this.p > 96) this.p = 96; this.paint(); }, 110); }
-    else if (mode === 'modal') this.mode = 'modal';
-    $('#ld').hidden = this.mode !== 'modal'; $('#pill').hidden = this.mode === 'modal'; this.paint();
+    if (this.n === 1) {
+      this.p = 0;
+      this.t = setInterval(() => {
+        this.p += (92 - this.p) * 0.07 + 0.3;
+        if (this.p > 96) this.p = 96;
+        this.paint();
+      }, 110);
+    }
+    $('#ld').hidden = false; this.paint();
   },
   stop() {
     if (--this.n > 0) return;
     clearInterval(this.t); this.p = 100; this.paint();
-    this.h = setTimeout(() => { $('#ld').hidden = true; $('#pill').hidden = true; }, 220);
+    this.h = setTimeout(() => { $('#ld').hidden = true; }, 220);
+  },
+
+  /* ── slim top bar (silent reads) ── */
+  br: 0, bt: null,
+  barStart() {
+    clearTimeout(this.bt); this.br++;
+    if (this.br > 1) return;
+    const bar = $('#bar'), fill = bar.firstElementChild;
+    bar.classList.add('on');
+    fill.style.transition = 'none';
+    fill.style.width = '10%';
+    // delay showing opacity so very fast requests never flash
+    this.bt = setTimeout(() => {
+      fill.style.transition = 'width .35s ease';
+      fill.style.width = '70%';
+    }, 120);
+  },
+  barStop() {
+    if (--this.br > 0) return;
+    clearTimeout(this.bt);
+    const bar = $('#bar'), fill = bar.firstElementChild;
+    fill.style.width = '100%';
+    setTimeout(() => {
+      fill.style.width = '0';
+      bar.classList.remove('on');
+    }, 220);
   }
 };
 
+/* Signature: api(action, data, opts)
+   opts.silent === true  → read, no modal (uses slim bar)
+   opts.pill  (legacy)  → ignored here; reads are always silent
+   Any action in WRITE_ACTIONS always uses the modal.
+*/
 async function api(action, data = {}, opt = {}) {
   if (!API_URL || API_URL.startsWith('PASTE')) throw new Error('The service is not available right now.');
-  Loader.start(opt.pill ? 'pill' : 'modal');
+  const isWrite = WRITE_ACTIONS.has(action);
+  // treat "login" as a write so the button shows feedback
+  if (isWrite || opt.forceModal) Loader.start();
+  else Loader.barStart();
+
   try {
-    const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: S.token, ...data }) });
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, token: S.token, ...data })
+    });
     const j = await r.json();
     if (!j.ok) { if (j.code === 'AUTH' && S.user) { signedOut(); } throw new Error(j.error || 'Request failed.'); }
     return j.data;
   } catch (e) {
     if (e instanceof TypeError || e instanceof SyntaxError) throw new Error('Connection problem. Please check your internet and try again.');
     throw e;
-  } finally { Loader.stop(); }
+  } finally {
+    if (isWrite || opt.forceModal) Loader.stop();
+    else Loader.barStop();
+  }
 }
 
 /* ═══════════ Modals ═══════════ */
@@ -445,7 +515,7 @@ V.clients = async function () {
   let q = '';
   const L = lazy({
     scroller: $('#sc'), body: $('#bd'), more: $('#mr'), empty: 'No clients found.',
-    load: (p, pill) => api('clientsList', { q, page: p }, { pill }),
+    load: (p) => api('clientsList', { q, page: p }),
     row: c => `<div class="row" data-id="${esc(c.id)}"><div class="av">${esc(initials(c.name))}</div><div class="grow"><b>${esc(c.name)}</b><small>${esc(c.policies.join(', ') || 'No insurance assigned')}</small></div>${badge(c.status)}${ic('chev')}</div>`,
     onData: d => $('#tot').textContent = `${d.total} client${d.total === 1 ? '' : 's'}`
   });
@@ -531,7 +601,7 @@ V.pay = async function () {
     setSeg();
     L = lazy({
       scroller: $('#sc'), body: $('#bd'), more: $('#mr'), empty: tab === 'pending' ? 'No pending payments.' : 'No payments received yet.',
-      load: (p, pill) => api(tab === 'pending' ? 'paymentsPending' : 'paymentsReceived', { q, page: p, filter: flt }, { pill }),
+      load: (p) => api(tab === 'pending' ? 'paymentsPending' : 'paymentsReceived', { q, page: p, filter: flt }),
       row: tab === 'pending' ? rowP : rowR,
       onData: d => $('#tot').textContent = tab === 'pending' ? `${d.total} pending · ${money(d.totalDue)} due now` : `${d.total} payment${d.total === 1 ? '' : 's'} · ${money(d.totalAmount)} received`
     });
@@ -584,7 +654,7 @@ V.reports = async function () {
   let q = '';
   const L = lazy({
     scroller: $('#sc'), body: $('#bd'), more: $('#mr'), table: true, empty: 'No clients found.',
-    load: (p, pill) => api('clientsList', { q, page: p }, { pill }),
+    load: (p) => api('clientsList', { q, page: p }),
     row: c => `<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.policies.join(', ') || '—')}</td><td>${fdate(c.nextDue)}</td><td>${badge(c.status)}</td><td class="r">${money(c.paid)}</td><td class="r"><button class="btn sm" data-st="${esc(c.id)}">${ic('file')}Statement</button></td></tr>`,
     onData: d => $('#tot').textContent = `${d.total} client${d.total === 1 ? '' : 's'}`
   });
@@ -677,7 +747,7 @@ ST.theme = function () {
   $('.themes').onclick = async e => {
     const b = e.target.closest('.theme'); if (!b) return;
     applyTheme(b.dataset.t); localStorage.setItem('ei_theme_user', '1'); ST.theme();
-    if (S.user.role === 'admin') { try { S.settings = await api('settingsSave', { settings: { theme: b.dataset.t } }, { pill: true }); } catch (err) { toast(err.message, 'err'); } }
+    if (S.user.role === 'admin') { try { S.settings = await api('settingsSave', { settings: { theme: b.dataset.t } }); } catch (err) { toast(err.message, 'err'); } }
   };
 };
 
