@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="blue">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8">
+<title>Electrify Insurance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+[hidden]{display:none!important}
+
+/* ── Themes ── */
+[data-theme=blue]{--p:#1d4ed8;--p2:#1e3a8a;--pl:#e8effe;--bg:#f3f6fc;--s:#fff;--t:#0f1f3d;--m:#64748b;--b:#e3e9f3;--ok:#15803d;--okl:#dcfce7;--warn:#b45309;--warnl:#fef3c7;--bad:#b91c1c;--badl:#fee2e2;--sh:0 1px 2px rgba(15,31,61,.06),0 4px 14px rgba(15,31,61,.06)}
+[data-theme=ocean]{--p:#0369a1;--p2:#0c4a6e;--pl:#e0f2fe;--bg:#f1f7fb;--s:#fff;--t:#0b2233;--m:#5b7285;--b:#dbe7ef;--ok:#15803d;--okl:#dcfce7;--warn:#b45309;--warnl:#fef3c7;--bad:#b91c1c;--badl:#fee2e2;--sh:0 1px 2px rgba(11,34,51,.06),0 4px 14px rgba(11,34,51,.06)}
+[data-theme=indigo]{--p:#4338ca;--p2:#312e81;--pl:#eceafd;--bg:#f5f5fd;--s:#fff;--t:#1b1a3a;--m:#6b6b8c;--b:#e4e3f3;--ok:#15803d;--okl:#dcfce7;--warn:#b45309;--warnl:#fef3c7;--bad:#b91c1c;--badl:#fee2e2;--sh:0 1px 2px rgba(27,26,58,.06),0 4px 14px rgba(27,26,58,.06)}
+[data-theme=emerald]{--p:#047857;--p2:#064e3b;--pl:#dcf5ea;--bg:#f2f8f5;--s:#fff;--t:#0d2a20;--m:#5a7468;--b:#dbe9e2;--ok:#15803d;--okl:#dcfce7;--warn:#b45309;--warnl:#fef3c7;--bad:#b91c1c;--badl:#fee2e2;--sh:0 1px 2px rgba(13,42,32,.06),0 4px 14px rgba(13,42,32,.06)}
+[data-theme=slate]{--p:#334155;--p2:#0f172a;--pl:#e7ecf3;--bg:#f4f6f9;--s:#fff;--t:#111827;--m:#64748b;--b:#e2e8f0;--ok:#15803d;--okl:#dcfce7;--warn:#b45309;--warnl:#fef3c7;--bad:#b91c1c;--badl:#fee2e2;--sh:0 1px 2px rgba(17,24,39,.06),0 4px 14px rgba(17,24,39,.06)}
+[data-theme=midnight]{--p:#3b82f6;--p2:#0f1b36;--pl:#172a52;--bg:#0b1220;--s:#121c33;--t:#e6edf8;--m:#93a4c0;--b:#22304d;--ok:#4ade80;--okl:#12341f;--warn:#fbbf24;--warnl:#3a2b0a;--bad:#f87171;--badl:#3b1515;--sh:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25)}
+
+/* ── Base components ── */
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.muted{color:var(--m)}
+h1{font-size:20px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:15px;font-weight:650}
+.card{background:var(--s);border:1px solid var(--b);border-radius:14px;box-shadow:var(--sh);padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:40px;padding:0 16px;border-radius:10px;font-weight:600;border:1px solid var(--b);background:var(--s);transition:.15s}
+.btn:hover{background:var(--pl)}
+.btn.primary{background:var(--p);border-color:var(--p);color:#fff}
+.btn.primary:hover{filter:brightness(1.1);background:var(--p)}
+.btn.danger{color:var(--bad);border-color:var(--badl);background:var(--badl)}
+.btn.sm{height:32px;padding:0 12px;font-size:13px;border-radius:8px}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:12px;font-weight:600;color:var(--m)}
+.field input,.field select,.field textarea{height:42px;padding:0 12px;border:1px solid var(--b);border-radius:10px;background:var(--s);outline:0;width:100%}
+.field textarea{height:76px;padding:10px 12px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus,.search input:focus{border-color:var(--p);box-shadow:0 0 0 3px var(--pl)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.badge{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:99px;font-size:11.5px;font-weight:650;white-space:nowrap;background:var(--pl);color:var(--p)}
+.badge.ok{background:var(--okl);color:var(--ok)}
+.badge.warn{background:var(--warnl);color:var(--warn)}
+.badge.bad{background:var(--badl);color:var(--bad)}
+.badge.gray{background:var(--b);color:var(--m)}
+.empty{padding:34px 16px;text-align:center;color:var(--m)}
+.grow{flex:1;min-width:0}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r{text-align:right}
+
+/* ── Login ── */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,var(--p2),var(--p))}
+.lbox{width:100%;max-width:390px;background:var(--s);border-radius:20px;padding:30px 26px;box-shadow:0 20px 60px rgba(0,0,0,.28)}
+.lbrand{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:22px;gap:8px}
+.logo{width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,var(--p2),var(--p));color:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.logo .ic{width:30px;height:30px}
+.logo img{width:100%;height:100%;object-fit:cover}
+.lerr{background:var(--badl);color:var(--bad);padding:9px 12px;border-radius:10px;font-size:13px;margin-bottom:12px}
+
+/* ── App shell ── */
+header.top{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,var(--p2),var(--p));color:#fff;height:58px;display:flex;align-items:center;gap:11px;padding:0 16px}
+header.top .logo{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.18)}
+header.top .logo .ic{width:20px;height:20px}
+header.top b{font-size:16px;letter-spacing:-.01em}
+header.top small{display:block;font-size:11px;opacity:.8;line-height:1.1}
+.me{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+.menu{position:absolute;right:12px;top:54px;background:var(--s);color:var(--t);border:1px solid var(--b);border-radius:12px;box-shadow:var(--sh);min-width:210px;padding:8px;z-index:40}
+.menu .who{padding:8px 10px 10px;border-bottom:1px solid var(--b);margin-bottom:6px}
+.menu button{width:100%;display:flex;gap:9px;align-items:center;padding:9px 10px;border-radius:8px;text-align:left}
+.menu button:hover{background:var(--pl)}
+main{max-width:1100px;margin:0 auto;padding:18px 14px 96px}
+.pagehead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+nav.foot{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--s);border-top:1px solid var(--b);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 16px rgba(15,31,61,.06)}
+nav.foot button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 8px;color:var(--m);font-size:11px;font-weight:600}
+nav.foot button .ic{width:23px;height:23px}
+nav.foot button.on{color:var(--p)}
+nav.foot button.on::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 4px 4px;background:var(--p)}
+
+/* ── Dashboard bits ── */
+.grid{display:grid;gap:12px}
+.k4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-bottom:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.kpi{display:flex;gap:13px;align-items:center}
+.kic{width:44px;height:44px;border-radius:12px;background:var(--pl);color:var(--p);display:flex;align-items:center;justify-content:center;flex:none}
+.kl{font-size:12px;color:var(--m);font-weight:600}
+.kv{font-size:21px;font-weight:750;letter-spacing:-.02em}
+.mini{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--b)}
+.mini:first-of-type{border-top:0}
+.mini small,.row small{display:block;color:var(--m);font-size:12px}
+.amt{font-weight:700;text-align:right;white-space:nowrap}
+
+/* ── Lists / lazy scroll ── */
+.search{position:relative;flex:1;min-width:0}
+.search .ic{position:absolute;left:12px;top:11px;color:var(--m);width:18px;height:18px}
+.search input{width:100%;height:40px;padding:0 12px 0 38px;border:1px solid var(--b);border-radius:10px;background:var(--s);outline:0}
+.toolbar{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.scroll10{max-height:560px;overflow:auto;background:var(--s);border:1px solid var(--b);border-radius:14px;box-shadow:var(--sh)}
+.scroll10.tb{max-height:600px}
+.row{display:flex;align-items:center;gap:11px;height:56px;padding:0 14px;border-bottom:1px solid var(--b);cursor:pointer}
+.row:hover{background:var(--pl)}
+.row.static{cursor:default}.row.static:hover{background:none}
+.row b{display:block;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{width:36px;height:36px;border-radius:50%;background:var(--pl);color:var(--p);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none}
+.more{display:none;height:36px;line-height:36px;text-align:center;font-size:12px;color:var(--m)}
+table{width:100%;border-collapse:collapse;min-width:680px}
+thead th{position:sticky;top:0;z-index:2;height:40px;background:var(--s);text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--m);padding:0 14px;border-bottom:1px solid var(--b)}
+thead th.r{text-align:right}
+tbody tr{height:56px;border-bottom:1px solid var(--b)}
+tbody td{padding:0 14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg{display:inline-flex;background:var(--pl);border-radius:10px;padding:3px;gap:2px}
+.seg button{padding:7px 14px;border-radius:8px;font-weight:600;color:var(--m)}
+.seg button.on{background:var(--s);color:var(--p);box-shadow:var(--sh)}
+.sec{margin:22px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* ── Charts ── */
+.bars{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:22px}
+.bars>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0}
+.bars i{display:block;width:100%;max-width:46px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--p),var(--p2));min-height:3px}
+.bars span{font-size:11px;color:var(--m)}
+.bars em{font-style:normal;font-size:11px;font-weight:700}
+.hbar{margin:10px 0}
+.hbar>div:first-child{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+.hbar .tr{height:9px;border-radius:9px;background:var(--pl);overflow:hidden}
+.hbar .tr i{display:block;height:100%;border-radius:9px;background:var(--p)}
+.owe{padding:12px 0;border-top:1px solid var(--b);cursor:pointer}
+.owe:first-child{border-top:0}
+.owe .oh{display:flex;justify-content:space-between;gap:10px;margin-bottom:5px}
+.owe .ol>div{display:flex;justify-content:space-between;font-size:12.5px;color:var(--m);padding:2px 0;gap:10px}
+
+/* ── Modal / loader / toast ── */
+.ov{position:fixed;inset:0;z-index:60;background:rgba(10,20,40,.5);display:flex;align-items:flex-end;justify-content:center;animation:fd .15s}
+.sheet{width:100%;max-width:560px;max-height:92vh;background:var(--s);border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .2s}
+.sheet.wide{max-width:760px}
+.sheet .hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--b)}
+.sheet .bd{padding:16px 18px;overflow:auto}
+.sheet .ft{display:flex;gap:10px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--b);flex-wrap:wrap}
+@media(min-width:700px){.ov{align-items:center}.sheet{border-radius:18px}}
+@keyframes fd{from{opacity:0}}@keyframes up{from{transform:translateY(24px);opacity:0}}
+#ld{position:fixed;inset:0;z-index:100;background:rgba(10,20,40,.45);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+#ld .lc{background:var(--s);border-radius:18px;padding:26px 30px;width:230px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#ld .pc{font-size:38px;font-weight:800;letter-spacing:-.03em;color:var(--p)}
+#ld .tr{height:7px;border-radius:7px;background:var(--pl);margin:12px 0 8px;overflow:hidden}
+#ld .tr i{display:block;height:100%;width:0;background:var(--p);border-radius:7px;transition:width .12s linear}
+#pill{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:90;background:var(--p2);color:#fff;padding:7px 16px;border-radius:99px;font-weight:700;font-size:13px;box-shadow:var(--sh)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:88px;z-index:120;display:flex;flex-direction:column;gap:8px;align-items:center;width:92%;max-width:420px;pointer-events:none}
+#toast div{background:var(--t);color:var(--s);padding:11px 16px;border-radius:12px;font-weight:600;box-shadow:var(--sh);animation:up .2s}
+#toast div.err{background:var(--bad);color:#fff}
+
+/* ── Settings ── */
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.theme{border:2px solid var(--b);border-radius:12px;padding:10px;text-align:left;background:var(--s)}
+.theme.on{border-color:var(--p)}
+.theme i{display:block;height:34px;border-radius:8px;margin-bottom:8px}
+.pills{display:flex;gap:8px;overflow:auto;margin-bottom:14px;padding-bottom:2px}
+.pills button{padding:8px 15px;border-radius:99px;border:1px solid var(--b);background:var(--s);font-weight:600;white-space:nowrap;color:var(--m)}
+.pills button.on{background:var(--p);border-color:var(--p);color:#fff}
+
+/* ── Statement ── */
+.st h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--m);margin:16px 0 6px}
+.st table{min-width:0;font-size:13px}
+.st th,.st td{padding:7px 8px;text-align:left;border-bottom:1px solid var(--b);white-space:normal;height:auto;position:static;max-width:none}
+.st .r{text-align:right}
+.sumline{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px}
+.sumline div{background:var(--pl);border-radius:10px;padding:10px 14px}
+@media(max-width:560px){.two{grid-template-columns:1fr}.pagehead .btn span.t{display:none}}
+@media print{body>*:not(#mods){display:none!important}.ov{position:static;background:none}.sheet{max-height:none;box-shadow:none}.sheet .ft,.sheet .hd button{display:none}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.8a3.5 3.5 0 010 6.4M18 14.3c2.2.7 3.5 2.6 3.5 5.7"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M8 16v-5M12 16V8M16 16v-8"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.9.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5a2 2 0 00-2 2v12a2 2 0 002 2h4M16 8l4 4-4 4M20 12H9"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M13 8l-3 5h4l-3 5"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="i-cash" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.8"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6zM14 3v5h5M9 13h6M9 17h6"/></symbol>
+</defs></svg>
+
+<!-- LOGIN -->
+<section id="login" hidden>
+  <form class="lbox" id="lf" autocomplete="on">
+    <div class="lbrand">
+      <div class="logo" data-logo></div>
+      <div><h1 data-co>Electrify Insurance</h1><div class="muted" data-tag></div></div>
+    </div>
+    <div id="lerr" class="lerr" hidden></div>
+    <div class="field"><label>Username</label><input id="lu" name="username" autocomplete="username" autocapitalize="none" required></div>
+    <div class="field"><label>Password</label><input id="lp" name="password" type="password" autocomplete="current-password" required></div>
+    <button class="btn primary" style="width:100%;height:44px;margin-top:4px" type="submit">Sign in</button>
+  </form>
+</section>
+
+<!-- APP -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="logo" data-logo></div>
+    <div class="grow"><b data-co>Electrify Insurance</b><small data-tag></small></div>
+    <button class="me" id="meBtn" aria-label="Account"></button>
+    <div class="menu" id="menu" hidden>
+      <div class="who"><b id="mName"></b><div class="muted" id="mRole"></div></div>
+      <button id="mOut"><svg class="ic"><use href="#i-logout"/></svg>Sign out</button>
+    </div>
+  </header>
+  <main id="main"></main>
+  <nav class="foot" id="nav">
+    <button data-v="dash"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+    <button data-v="clients"><svg class="ic"><use href="#i-users"/></svg>Clients</button>
+    <button data-v="pay"><svg class="ic"><use href="#i-card"/></svg>Payments</button>
+    <button data-v="reports"><svg class="ic"><use href="#i-chart"/></svg>Reports</button>
+    <button data-v="settings"><svg class="ic"><use href="#i-gear"/></svg>Settings</button>
+  </nav>
+</div>
+
+<div id="mods"></div>
+<div id="ld" hidden><div class="lc"><div class="pc" id="ldp">0%</div><div class="tr"><i id="ldb"></i></div><div class="muted" style="font-size:12px">Please wait…</div></div></div>
+<div id="pill" hidden>0%</div>
+<div id="toast"></div>
+
+<script>
+/* ═══════════ Configuration ═══════════ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwgCsBpwYBjZnnNYSt2H9gEiGP0hKQCT_WyD-RUcs-uCgNop9F-9pK6WcA9wzdnRnah/exec';
+
+/* ═══════════ Utilities ═══════════ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ic = n => `<svg class="ic"><use href="#i-${n}"/></svg>`;
+const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fdate = s => { if (!s) return '—'; const [y, m, d] = String(s).slice(0, 10).split('-'); return `${+d} ${MN[m - 1]} ${y}`; };
+const initials = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const S = { token: localStorage.getItem('ei_token') || '', user: null, settings: { company_name: 'Electrify Insurance', tagline: 'Insurance Platform', currency: 'R', logo_url: '', theme: 'blue' }, products: [], view: 'dash', stab: 'company' };
+const money = n => `${S.settings.currency || ''}${S.settings.currency && S.settings.currency.length > 1 ? ' ' : ''}${Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const per = f => f === 'yearly' ? 'year' : 'month';
+const STATUS = { Owing: 'bad', 'Paid up': 'ok', Pending: 'warn', 'No policy': 'gray', Active: 'ok', Cancelled: 'gray', Overdue: 'bad', Due: 'warn', Upcoming: '', Disabled: 'gray', Inactive: 'gray' };
+const badge = s => `<span class="badge ${STATUS[s] ?? ''}">${esc(s)}</span>`;
+const debounce = (f, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; };
+
+function toast(msg, kind) {
+  const d = document.createElement('div'); d.textContent = msg; if (kind === 'err') d.className = 'err';
+  $('#toast').appendChild(d); setTimeout(() => d.remove(), 3600);
+}
+
+/* ═══════════ Loader (percentage) ═══════════ */
+const Loader = {
+  n: 0, p: 0, t: null, h: null, mode: 'modal',
+  paint() { const v = Math.floor(this.p) + '%'; $('#ldp').textContent = v; $('#ldb').style.width = v; $('#pill').textContent = v; },
+  start(mode) {
+    clearTimeout(this.h); this.n++;
+    if (this.n === 1) { this.p = 0; this.mode = mode; this.t = setInterval(() => { this.p += (92 - this.p) * 0.07 + 0.3; if (this.p > 96) this.p = 96; this.paint(); }, 110); }
+    else if (mode === 'modal') this.mode = 'modal';
+    $('#ld').hidden = this.mode !== 'modal'; $('#pill').hidden = this.mode === 'modal'; this.paint();
+  },
+  stop() {
+    if (--this.n > 0) return;
+    clearInterval(this.t); this.p = 100; this.paint();
+    this.h = setTimeout(() => { $('#ld').hidden = true; $('#pill').hidden = true; }, 220);
+  }
+};
+
+async function api(action, data = {}, opt = {}) {
+  if (!API_URL || API_URL.startsWith('PASTE')) throw new Error('The service is not available right now.');
+  Loader.start(opt.pill ? 'pill' : 'modal');
+  try {
+    const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: S.token, ...data }) });
+    const j = await r.json();
+    if (!j.ok) { if (j.code === 'AUTH' && S.user) { signedOut(); } throw new Error(j.error || 'Request failed.'); }
+    return j.data;
+  } catch (e) {
+    if (e instanceof TypeError || e instanceof SyntaxError) throw new Error('Connection problem. Please check your internet and try again.');
+    throw e;
+  } finally { Loader.stop(); }
+}
+
+/* ═══════════ Modals ═══════════ */
+function modal({ title, body, actions = [], wide = false }) {
+  const ov = document.createElement('div'); ov.className = 'ov';
+  ov.innerHTML = `<div class="sheet ${wide ? 'wide' : ''}"><div class="hd"><h2>${esc(title)}</h2><button class="btn sm" data-x aria-label="Close">${ic('x')}</button></div><div class="bd">${body}</div>${actions.length ? '<div class="ft"></div>' : ''}</div>`;
+  const ft = $('.ft', ov);
+  actions.forEach(a => { const b = document.createElement('button'); b.className = 'btn ' + (a.cls || ''); b.innerHTML = a.label; b.onclick = () => a.run(ov, b); ft.appendChild(b); });
+  $('[data-x]', ov).onclick = () => ov.remove();
+  ov.addEventListener('mousedown', e => { if (e.target === ov) ov.remove(); });
+  $('#mods').appendChild(ov); const f = $('input,select,textarea', ov); if (f && !wide) f.focus();
+  return ov;
+}
+function confirmBox(msg, label = 'Confirm') {
+  return new Promise(res => modal({ title: 'Please confirm', body: `<p>${esc(msg)}</p>`, actions: [
+    { label: 'Cancel', run: o => { o.remove(); res(false); } }, { label, cls: 'primary', run: o => { o.remove(); res(true); } }] }));
+}
+const field = (label, name, val = '', type = 'text', extra = '') => `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${esc(val)}" ${extra}></div>`;
+const formData = el => { const o = {}; $$('[name]', el).forEach(i => o[i.name] = i.value); return o; };
+async function submit(btn, fn) {
+  btn.disabled = true;
+  try { await fn(); } catch (e) { toast(e.message, 'err'); } finally { btn.disabled = false; }
+}
+
+/* ═══════════ Theme & branding ═══════════ */
+const THEMES = [
+  { id: 'blue', name: 'Electric Blue', c: 'linear-gradient(135deg,#1e3a8a,#1d4ed8)' },
+  { id: 'ocean', name: 'Ocean', c: 'linear-gradient(135deg,#0c4a6e,#0369a1)' },
+  { id: 'indigo', name: 'Indigo', c: 'linear-gradient(135deg,#312e81,#4338ca)' },
+  { id: 'emerald', name: 'Emerald', c: 'linear-gradient(135deg,#064e3b,#047857)' },
+  { id: 'slate', name: 'Slate', c: 'linear-gradient(135deg,#0f172a,#334155)' },
+  { id: 'midnight', name: 'Midnight (dark)', c: 'linear-gradient(135deg,#0b1220,#3b82f6)' }
+];
+function applyTheme(t) {
+  if (!THEMES.some(x => x.id === t)) t = 'blue';
+  document.documentElement.dataset.theme = t; localStorage.setItem('ei_theme', t);
+  const c = getComputedStyle(document.documentElement).getPropertyValue('--p2').trim();
+  $('meta[name=theme-color]').content = c || '#1d4ed8';
+}
+function brand() {
+  const s = S.settings;
+  $$('[data-co]').forEach(e => e.textContent = s.company_name);
+  $$('[data-tag]').forEach(e => e.textContent = s.tagline || '');
+  $$('[data-logo]').forEach(e => {
+    if (s.logo_url) { e.innerHTML = `<img alt="" src="${esc(s.logo_url)}">`; $('img', e).onerror = () => e.innerHTML = ic('shield'); }
+    else e.innerHTML = ic('shield');
+  });
+  document.title = s.company_name;
+}
+
+/* ═══════════ Auth flow ═══════════ */
+function showLogin() { $('#app').hidden = true; $('#login').hidden = false; brand(); }
+function showApp() {
+  $('#login').hidden = true; $('#app').hidden = false; brand();
+  $('#meBtn').textContent = initials(S.user.name); $('#mName').textContent = S.user.name; $('#mRole').textContent = S.user.role === 'admin' ? 'Administrator' : 'Staff';
+  go(S.view || 'dash');
+}
+function signedOut() {
+  S.token = ''; S.user = null; localStorage.removeItem('ei_token'); $('#mods').innerHTML = ''; showLogin();
+}
+$('#lf').addEventListener('submit', async e => {
+  e.preventDefault(); const er = $('#lerr'); er.hidden = true;
+  try {
+    const d = await api('login', { username: $('#lu').value, password: $('#lp').value });
+    S.token = d.token; localStorage.setItem('ei_token', d.token); S.user = d.user;
+    const b = await api('bootstrap'); S.settings = b.settings; S.products = b.products;
+    if (!localStorage.getItem('ei_theme_user')) applyTheme(S.settings.theme);
+    $('#lp').value = ''; S.view = 'dash'; showApp();
+  } catch (err) { er.textContent = err.message; er.hidden = false; }
+});
+$('#meBtn').onclick = e => { e.stopPropagation(); $('#menu').hidden = !$('#menu').hidden; };
+document.addEventListener('click', () => $('#menu').hidden = true);
+$('#mOut').onclick = async () => { try { await api('logout'); } catch (e) {} signedOut(); };
+
+async function boot() {
+  applyTheme(localStorage.getItem('ei_theme') || 'blue');
+  brand();
+  try {
+    if (S.token) {
+      const b = await api('bootstrap'); S.user = b.user; S.settings = b.settings; S.products = b.products;
+      if (!localStorage.getItem('ei_theme_user')) applyTheme(S.settings.theme);
+      return showApp();
+    }
+    S.settings = { ...S.settings, ...await api('publicInfo') };
+    if (!localStorage.getItem('ei_theme_user')) applyTheme(S.settings.theme);
+  } catch (e) { if (S.token) { S.token = ''; localStorage.removeItem('ei_token'); } }
+  showLogin();
+}
+
+/* ═══════════ Router ═══════════ */
+const V = {};
+async function go(v) {
+  S.view = v;
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  window.scrollTo(0, 0);
+  try { await V[v](); } catch (e) { if (S.user) toast(e.message, 'err'); }
+}
+$('#nav').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(b.dataset.v); });
+const refresh = () => go(S.view);
+const main = () => $('#main');
+
+/* ═══════════ Lazy list helper ═══════════ */
+function lazy(o) {
+  const sc = o.scroller, bd = o.body, mr = o.more;
+  let page = 0, done = false, busy = false, seq = 0;
+  async function next(reset) {
+    if (reset) { page = 0; done = false; busy = false; bd.innerHTML = ''; sc.scrollTop = 0; mr.style.display = 'none'; seq++; }
+    if (done || busy) return;
+    const my = seq; busy = true;
+    try {
+      const d = await o.load(page + 1, page > 0);
+      if (my !== seq) return;
+      page++; done = !d.hasMore;
+      if (page === 1 && !d.rows.length) bd.innerHTML = o.table ? `<tr><td colspan="9" class="empty">${o.empty || 'Nothing here yet.'}</td></tr>` : `<div class="empty">${o.empty || 'Nothing here yet.'}</div>`;
+      else bd.insertAdjacentHTML('beforeend', d.rows.map(o.row).join(''));
+      mr.style.display = done ? 'none' : 'block';
+      if (o.onData) o.onData(d, page);
+    } catch (e) { toast(e.message, 'err'); }
+    finally { if (my === seq) busy = false; }
+  }
+  sc.addEventListener('scroll', () => { if (sc.scrollTop > 0 && sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 30) next(false); });
+  next(true);
+  return { reload: () => next(true) };
+}
+const searchBox = (id, ph) => `<div class="search">${ic('search')}<input id="${id}" type="search" placeholder="${ph}" autocomplete="off"></div>`;
+
+/* ═══════════ Dashboard ═══════════ */
+V.dash = async function () {
+  const d = await api('dashboard');
+  main().innerHTML = `
+    <div class="pagehead"><div><h1>Dashboard</h1><div class="muted">Welcome back, ${esc(S.user.name.split(' ')[0])}</div></div>
+      <button class="btn primary" id="nc">${ic('plus')}<span class="t">New client</span></button></div>
+    <div class="grid k4">
+      <div class="card kpi"><div class="kic">${ic('cash')}</div><div><div class="kl">Total revenue</div><div class="kv">${money(d.revenue)}</div></div></div>
+      <div class="card kpi"><div class="kic">${ic('chart')}</div><div><div class="kl">This month</div><div class="kv">${money(d.month)}</div></div></div>
+      <div class="card kpi"><div class="kic">${ic('clock')}</div><div><div class="kl">Outstanding (${d.owingCount} client${d.owingCount === 1 ? '' : 's'})</div><div class="kv">${money(d.owed)}</div></div></div>
+      <div class="card kpi"><div class="kic">${ic('shield')}</div><div><div class="kl">Active insurances</div><div class="kv">${d.activePolicies}</div><div class="muted" style="font-size:12px">${d.clients} client${d.clients === 1 ? '' : 's'}</div></div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><div class="sec" style="margin-top:0"><h2>Recent payments</h2><button class="btn sm" data-go="pay">View all</button></div>
+        ${d.recent.length ? d.recent.map(p => `<div class="mini"><div class="av">${initials(p.clientName)}</div><div class="grow"><b class="ell" style="display:block">${esc(p.clientName)}</b><small>${esc(p.productName)} · ${fdate(p.date)}</small></div><div class="amt" style="color:var(--ok)">+${money(p.amount)}</div></div>`).join('') : '<div class="empty">No payments received yet.</div>'}</div>
+      <div class="card"><div class="sec" style="margin-top:0"><h2>Pending payments</h2><button class="btn sm" data-go="pay">Receive</button></div>
+        ${d.due.length ? d.due.map(p => `<div class="mini"><div class="av">${initials(p.clientName)}</div><div class="grow"><b class="ell" style="display:block">${esc(p.clientName)}</b><small>${esc(p.productName)} · due ${fdate(p.dueDate)}</small></div><div class="amt">${money(p.amount)}<div>${badge(p.state)}</div></div></div>`).join('') : '<div class="empty">Nothing pending.</div>'}</div>
+    </div>`;
+  $('#nc').onclick = () => clientForm();
+  $$('[data-go]', main()).forEach(b => b.onclick = () => go(b.dataset.go));
+};
+
+/* ═══════════ Clients ═══════════ */
+V.clients = async function () {
+  main().innerHTML = `
+    <div class="pagehead"><div><h1>Clients</h1><div class="muted">Create clients and assign insurance</div></div><button class="btn primary" id="nc">${ic('plus')}<span class="t">New client</span></button></div>
+    <div class="toolbar">${searchBox('q', 'Search name, phone or email')}</div>
+    <div class="scroll10" id="sc"><div id="bd"></div><div class="more" id="mr">Scroll for more…</div></div>
+    <div class="muted" id="tot" style="margin-top:8px;font-size:12px"></div>`;
+  $('#nc').onclick = () => clientForm();
+  let q = '';
+  const L = lazy({
+    scroller: $('#sc'), body: $('#bd'), more: $('#mr'), empty: 'No clients found.',
+    load: (p, pill) => api('clientsList', { q, page: p }, { pill }),
+    row: c => `<div class="row" data-id="${esc(c.id)}"><div class="av">${esc(initials(c.name))}</div><div class="grow"><b>${esc(c.name)}</b><small>${esc(c.policies.join(', ') || 'No insurance assigned')}</small></div>${badge(c.status)}${ic('chev')}</div>`,
+    onData: d => $('#tot').textContent = `${d.total} client${d.total === 1 ? '' : 's'}`
+  });
+  $('#bd').onclick = e => { const r = e.target.closest('.row'); if (r) clientDetail(r.dataset.id); };
+  $('#q').oninput = debounce(e => { q = e.target.value.trim(); L.reload(); });
+};
+
+function clientForm(c) {
+  const isNew = !c;
+  c = c || {};
+  const opts = S.products.map(p => `<option value="${esc(p.id)}">${esc(p.name)} — ${money(p.premium)} / ${per(p.frequency)}</option>`).join('');
+  modal({
+    title: isNew ? 'New client' : 'Edit client',
+    body: `<div id="cf">${field('Full name *', 'name', c.name)}
+      <div class="two">${field('Phone', 'phone', c.phone, 'tel')}${field('Email', 'email', c.email, 'email')}</div>
+      ${field('ID number', 'idNumber', c.idNumber)}
+      <div class="field"><label>Address</label><textarea name="address">${esc(c.address || '')}</textarea></div>
+      ${isNew ? `<div class="two"><div class="field"><label>Assign insurance</label><select name="productId"><option value="">None for now</option>${opts}</select></div>${field('Start date', 'startDate', today(), 'date')}</div>` : ''}</div>`,
+    actions: [{ label: 'Cancel', run: o => o.remove() }, {
+      label: isNew ? 'Create client' : 'Save', cls: 'primary', run: (o, b) => submit(b, async () => {
+        const f = formData($('#cf', o)); if (!isNew) f.id = c.id;
+        const r = await api('clientSave', f);
+        if (isNew && f.productId) await api('policyAssign', { clientId: r.id, productId: f.productId, startDate: f.startDate });
+        o.remove(); toast(isNew ? 'Client created' : 'Client updated');
+        if (isNew) { refresh(); clientDetail(r.id); } else { refresh(); clientDetail(c.id); }
+      })
+    }]
+  });
+}
+
+async function clientDetail(id) {
+  const d = await api('clientGet', { id });
+  const c = d.client;
+  document.querySelectorAll('#mods .ov').forEach(o => o.remove());
+  modal({
+    title: c.name,
+    body: `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">${badge(d.status)}<span class="muted">${esc(c.id)}</span></div>
+      <div class="muted" style="line-height:1.7">${[c.phone, c.email, c.idNumber && 'ID ' + c.idNumber, c.address].filter(Boolean).map(esc).join('<br>') || 'No contact details'}</div>
+      <div class="sumline"><div><div class="kl">Total paid</div><b>${money(d.paid)}</b></div><div><div class="kl">Outstanding</div><b>${money(d.owed)}</b></div></div>
+      <div class="sec" style="margin-bottom:4px"><h2>Insurance</h2></div>
+      ${d.policies.length ? d.policies.map(p => `<div class="mini"><div class="grow"><b>${esc(p.productName)}</b><small>${esc(p.category)} · ${money(p.premium)} / ${per(p.frequency)} · next ${fdate(p.nextDueDate)}</small></div>${badge(p.status)}${p.status !== 'Cancelled' ? `<button class="btn sm danger" data-cancel="${esc(p.id)}">Cancel</button>` : ''}</div>`).join('') : '<div class="empty" style="padding:16px">No insurance assigned yet.</div>'}`,
+    actions: [
+      { label: `${ic('edit')}Edit`, run: () => clientForm(c) },
+      { label: `${ic('file')}Statement`, run: () => statementView(c.id) },
+      { label: `${ic('plus')}Assign insurance`, cls: 'primary', run: () => assignForm(c) }
+    ]
+  });
+  $$('[data-cancel]').forEach(b => b.onclick = async () => {
+    if (!await confirmBox('Cancel this insurance? Any pending payment for it will be removed.', 'Cancel insurance')) return;
+    try { await api('policyCancel', { policyId: b.dataset.cancel }); toast('Insurance cancelled'); refresh(); clientDetail(c.id); } catch (e) { toast(e.message, 'err'); }
+  });
+}
+
+function assignForm(c) {
+  if (!S.products.length) return toast('Create an insurance in Settings first.', 'err');
+  modal({
+    title: 'Assign insurance',
+    body: `<div id="af"><p class="muted" style="margin-bottom:12px">For ${esc(c.name)}. A payment request is created and appears under pending payments.</p>
+      <div class="field"><label>Insurance</label><select name="productId">${S.products.map(p => `<option value="${esc(p.id)}">${esc(p.name)} — ${money(p.premium)} / ${per(p.frequency)}</option>`).join('')}</select></div>
+      ${field('Start date', 'startDate', today(), 'date')}</div>`,
+    actions: [{ label: 'Cancel', run: o => o.remove() }, {
+      label: 'Assign', cls: 'primary', run: (o, b) => submit(b, async () => {
+        await api('policyAssign', { ...formData($('#af', o)), clientId: c.id });
+        toast('Insurance assigned — payment pending'); refresh(); clientDetail(c.id);
+      })
+    }]
+  });
+}
+
+/* ═══════════ Payments ═══════════ */
+V.pay = async function () {
+  main().innerHTML = `
+    <div class="pagehead"><div><h1>Payments</h1><div class="muted" id="sub">Receive and track premiums</div></div>
+      <div class="seg" id="seg"><button data-t="pending">Pending</button><button data-t="received">Received</button></div></div>
+    <div class="toolbar">${searchBox('q', 'Search client or insurance')}<div class="seg" id="flt"><button data-f="all">All</button><button data-f="due">Due now</button></div></div>
+    <div class="scroll10" id="sc"><div id="bd"></div><div class="more" id="mr">Scroll for more…</div></div>
+    <div class="muted" id="tot" style="margin-top:8px;font-size:12px"></div>`;
+  let tab = S.ptab || 'pending', flt = S.pflt || 'all', q = '', L; const cache = {};
+  const setSeg = () => { $$('#seg button').forEach(b => b.classList.toggle('on', b.dataset.t === tab)); $$('#flt button').forEach(b => b.classList.toggle('on', b.dataset.f === flt)); $('#flt').hidden = tab !== 'pending'; };
+  const rowP = r => { cache[r.id] = r; return `<div class="row static"><div class="grow"><b>${esc(r.clientName)}</b><small>${esc(r.productName)} · due ${fdate(r.dueDate)}</small></div><div class="amt">${money(r.amount)}<div>${badge(r.state)}</div></div><button class="btn sm primary" data-inv="${esc(r.id)}">Receive</button></div>`; };
+  const rowR = r => `<div class="row static"><div class="av">${esc(initials(r.clientName))}</div><div class="grow"><b>${esc(r.clientName)}</b><small>${esc(r.productName)} · ${fdate(r.date)} · ${esc(r.method)}${r.reference ? ' · ' + esc(r.reference) : ''}</small></div><div class="amt" style="color:var(--ok)">+${money(r.amount)}</div></div>`;
+  const build = () => {
+    setSeg();
+    L = lazy({
+      scroller: $('#sc'), body: $('#bd'), more: $('#mr'), empty: tab === 'pending' ? 'No pending payments.' : 'No payments received yet.',
+      load: (p, pill) => api(tab === 'pending' ? 'paymentsPending' : 'paymentsReceived', { q, page: p, filter: flt }, { pill }),
+      row: tab === 'pending' ? rowP : rowR,
+      onData: d => $('#tot').textContent = tab === 'pending' ? `${d.total} pending · ${money(d.totalDue)} due now` : `${d.total} payment${d.total === 1 ? '' : 's'} · ${money(d.totalAmount)} received`
+    });
+  };
+  $('#seg').onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = S.ptab = b.dataset.t; build(); };
+  $('#flt').onclick = e => { const b = e.target.closest('button'); if (!b) return; flt = S.pflt = b.dataset.f; build(); };
+  $('#q').oninput = debounce(e => { q = e.target.value.trim(); L.reload(); });
+  $('#bd').onclick = e => { const b = e.target.closest('[data-inv]'); if (b) payForm(cache[b.dataset.inv]); };
+  build();
+};
+
+function payForm(r) {
+  modal({
+    title: 'Receive payment',
+    body: `<div id="pf"><div class="card" style="margin-bottom:14px;background:var(--pl);box-shadow:none"><b>${esc(r.clientName)}</b><div class="muted">${esc(r.productName)} · due ${fdate(r.dueDate)}</div><div class="kv" style="margin-top:6px">${money(r.amount)}</div></div>
+      <div class="two"><div class="field"><label>Method</label><select name="method"><option>Cash</option><option>Card</option><option>EFT</option><option>Mobile money</option><option>Other</option></select></div>${field('Date received', 'date', today(), 'date')}</div>
+      ${field('Reference (optional)', 'reference')}</div>`,
+    actions: [{ label: 'Cancel', run: o => o.remove() }, {
+      label: `${ic('check')}Confirm payment`, cls: 'primary', run: (o, b) => submit(b, async () => {
+        const d = await api('paymentRecord', { ...formData($('#pf', o)), invoiceId: r.id });
+        o.remove(); toast('Payment recorded · next due ' + fdate(d.nextDueDate)); refresh();
+      })
+    }]
+  });
+}
+
+/* ═══════════ Reports ═══════════ */
+V.reports = async function () {
+  const [s, ow] = await Promise.all([api('reportSummary'), api('reportOwing')]);
+  const maxM = Math.max(...s.months.map(m => m.value), 1), maxC = Math.max(...s.categories.map(c => c.value), 1);
+  main().innerHTML = `
+    <div class="pagehead"><div><h1>Reports</h1><div class="muted">Revenue, outstanding payments and client statements</div></div></div>
+    <div class="grid k4">
+      <div class="card kpi"><div class="kic">${ic('cash')}</div><div><div class="kl">Total revenue</div><div class="kv">${money(s.revenue)}</div></div></div>
+      <div class="card kpi"><div class="kic">${ic('chart')}</div><div><div class="kl">This month</div><div class="kv">${money(s.month)}</div><div class="muted" style="font-size:12px">This year ${money(s.year)}</div></div></div>
+      <div class="card kpi"><div class="kic">${ic('clock')}</div><div><div class="kl">Owing now</div><div class="kv" style="color:var(--bad)">${money(s.owed)}</div><div class="muted" style="font-size:12px">${s.owing} client${s.owing === 1 ? '' : 's'}</div></div></div>
+      <div class="card kpi"><div class="kic">${ic('check')}</div><div><div class="kl">Paid-up clients</div><div class="kv">${s.paidUp}</div><div class="muted" style="font-size:12px">Upcoming ${money(s.upcoming)}</div></div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h2>Revenue — last 6 months</h2><div class="bars">${s.months.map(m => `<div><em>${m.value ? money(m.value).replace(/\.00$/, '') : ''}</em><i style="height:${Math.max(m.value / maxM * 100, 2)}%"></i><span>${MN[+m.key.slice(5) - 1]}</span></div>`).join('')}</div></div>
+      <div class="card"><h2>Revenue by insurance type</h2>${s.categories.length ? s.categories.map(c => `<div class="hbar"><div><span>${esc(c.name)}</span><b>${money(c.value)}</b></div><div class="tr"><i style="width:${c.value / maxC * 100}%"></i></div></div>`).join('') : '<div class="empty">No revenue yet.</div>'}</div>
+    </div>
+    <div class="sec"><h2>Clients owing</h2><span class="muted" style="font-size:12px">${ow.total > ow.rows.length ? `Showing ${ow.rows.length} of ${ow.total}` : `${ow.total} client${ow.total === 1 ? '' : 's'}`}</span></div>
+    <div class="card" id="owe">${ow.rows.length ? ow.rows.map(o => `<div class="owe" data-id="${esc(o.clientId)}"><div class="oh"><div><b>${esc(o.name)}</b><span class="muted"> ${esc(o.phone || '')}</span></div><b style="color:var(--bad)">${money(o.owed)}</b></div><div class="ol">${o.policies.map(p => `<div><span class="ell">${esc(p.name)} · ${money(p.amount)}/${per(p.frequency)}</span><span>Next payment ${fdate(p.nextDueDate)}</span></div>`).join('')}</div></div>`).join('') : '<div class="empty">Nobody is owing — all clients are up to date.</div>'}</div>
+    <div class="sec"><h2>Client statements</h2></div>
+    <div class="toolbar">${searchBox('q', 'Search a client name')}</div>
+    <div class="scroll10 tb" id="sc"><table><thead><tr><th>Client</th><th>Insurance</th><th>Next payment</th><th>Status</th><th class="r">Paid</th><th></th></tr></thead><tbody id="bd"></tbody></table><div class="more" id="mr">Scroll for more…</div></div>
+    <div class="muted" id="tot" style="margin-top:8px;font-size:12px"></div>`;
+  $('#owe').onclick = e => { const o = e.target.closest('.owe'); if (o) clientDetail(o.dataset.id); };
+  let q = '';
+  const L = lazy({
+    scroller: $('#sc'), body: $('#bd'), more: $('#mr'), table: true, empty: 'No clients found.',
+    load: (p, pill) => api('clientsList', { q, page: p }, { pill }),
+    row: c => `<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.policies.join(', ') || '—')}</td><td>${fdate(c.nextDue)}</td><td>${badge(c.status)}</td><td class="r">${money(c.paid)}</td><td class="r"><button class="btn sm" data-st="${esc(c.id)}">${ic('file')}Statement</button></td></tr>`,
+    onData: d => $('#tot').textContent = `${d.total} client${d.total === 1 ? '' : 's'}`
+  });
+  $('#bd').onclick = e => { const b = e.target.closest('[data-st]'); if (b) statementView(b.dataset.st); };
+  $('#q').oninput = debounce(e => { q = e.target.value.trim(); L.reload(); });
+};
+
+/* ═══════════ Statement + PDF ═══════════ */
+async function statementView(id) {
+  const st = await api('statement', { id });
+  const c = st.client;
+  modal({
+    title: 'Statement', wide: true,
+    body: `<div class="st"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b style="font-size:16px">${esc(c.name)}</b><div class="muted">${[c.phone, c.email, c.idNumber && 'ID ' + c.idNumber].filter(Boolean).map(esc).join(' · ')}<br>${esc(c.address || '')}</div></div><div class="muted r">${esc(S.settings.company_name)}<br>${fdate(st.today)}</div></div>
+      <h3>Insurance</h3>${st.policies.length ? `<table><tr><th>Insurance</th><th>Premium</th><th>Next due</th><th>Status</th></tr>${st.policies.map(p => `<tr><td>${esc(p.productName)}</td><td>${money(p.premium)} / ${per(p.frequency)}</td><td>${fdate(p.nextDueDate)}</td><td>${esc(p.status)}</td></tr>`).join('')}</table>` : '<div class="muted">None</div>'}
+      <h3>Account activity</h3>${st.ledger.length ? `<table><tr><th>Date</th><th>Description</th><th class="r">Charge</th><th class="r">Paid</th><th class="r">Balance</th></tr>${st.ledger.map(e => `<tr><td>${fdate(e.date)}</td><td>${esc(e.desc)}</td><td class="r">${e.debit ? money(e.debit) : ''}</td><td class="r">${e.credit ? money(e.credit) : ''}</td><td class="r">${money(e.balance)}</td></tr>`).join('')}</table>` : '<div class="muted">No activity yet.</div>'}
+      <div class="sumline"><div><div class="kl">Total paid</div><b>${money(st.totalPaid)}</b></div><div><div class="kl">Balance owing</div><b>${money(Math.max(st.balance, 0))}</b></div></div></div>`,
+    actions: [{ label: 'Close', run: o => o.remove() }, { label: `${ic('download')}Download PDF`, cls: 'primary', run: () => pdfStatement(st) }]
+  });
+}
+
+function pdfStatement(st) {
+  if (!window.jspdf) { window.print(); return; }
+  const { jsPDF } = window.jspdf, d = new jsPDF({ unit: 'pt', format: 'a4' });
+  const W = 595, H = 842, M = 40, co = S.settings, c = st.client;
+  const hex = getComputedStyle(document.documentElement).getPropertyValue('--p2').trim();
+  const rgb = /^#[0-9a-f]{6}$/i.test(hex) ? [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16)) : [30, 58, 138];
+  d.setFillColor(...rgb); d.rect(0, 0, W, 80, 'F');
+  d.setTextColor(255); d.setFont('helvetica', 'bold'); d.setFontSize(18); d.text(co.company_name || '', M, 38);
+  d.setFont('helvetica', 'normal'); d.setFontSize(9); d.text([co.address, co.phone, co.email].filter(Boolean).join('  |  '), M, 56, { maxWidth: 360 });
+  d.setFontSize(15); d.setFont('helvetica', 'bold'); d.text('STATEMENT', W - M, 38, { align: 'right' });
+  d.setFont('helvetica', 'normal'); d.setFontSize(9); d.text(fdate(st.today), W - M, 56, { align: 'right' });
+  d.setTextColor(30); let y = 112;
+  d.setFont('helvetica', 'bold'); d.setFontSize(13); d.text(c.name, M, y); y += 15;
+  d.setFont('helvetica', 'normal'); d.setFontSize(9.5); d.setTextColor(90);
+  [c.phone, c.email, c.idNumber && 'ID ' + c.idNumber, c.address].filter(Boolean).forEach(t => { d.text(String(t), M, y); y += 13; });
+  const cur = n => money(n);
+  const head = (cols) => { d.setFillColor(235, 240, 250); d.rect(M, y - 11, W - 2 * M, 18, 'F'); d.setFont('helvetica', 'bold'); d.setFontSize(8.5); d.setTextColor(60); cols.forEach(([t, x, al]) => d.text(t, x, y + 1, { align: al || 'left' })); y += 18; d.setFont('helvetica', 'normal'); d.setFontSize(9); d.setTextColor(30); };
+  const room = n => { if (y + n > H - 50) { d.addPage(); y = 50; return true; } return false; };
+  y += 12; d.setFont('helvetica', 'bold'); d.setFontSize(10.5); d.setTextColor(...rgb); d.text('Insurance', M, y); y += 16;
+  head([['Insurance', M + 6], ['Premium', 300], ['Next due', 410], ['Status', W - M - 6, 'right']]);
+  st.policies.forEach(p => { room(18); d.text(String(p.productName).slice(0, 38), M + 6, y); d.text(cur(p.premium) + ' / ' + per(p.frequency), 300, y); d.text(fdate(p.nextDueDate), 410, y); d.text(p.status, W - M - 6, y, { align: 'right' }); y += 17; });
+  y += 12; d.setFont('helvetica', 'bold'); d.setFontSize(10.5); d.setTextColor(...rgb); d.text('Account activity', M, y); y += 16;
+  const lh = () => head([['Date', M + 6], ['Description', 120], ['Charge', 390, 'right'], ['Paid', 460, 'right'], ['Balance', W - M - 6, 'right']]);
+  lh();
+  st.ledger.forEach(e => {
+    if (room(18)) lh();
+    d.text(fdate(e.date), M + 6, y); d.text(String(e.desc).slice(0, 50), 120, y);
+    if (e.debit) d.text(cur(e.debit), 390, y, { align: 'right' }); if (e.credit) d.text(cur(e.credit), 460, y, { align: 'right' });
+    d.text(cur(e.balance), W - M - 6, y, { align: 'right' }); y += 17;
+  });
+  room(60); y += 14; d.setDrawColor(200); d.line(M, y - 8, W - M, y - 8);
+  d.setFont('helvetica', 'bold'); d.setFontSize(10.5); d.setTextColor(30);
+  d.text('Total paid: ' + cur(st.totalPaid), M, y + 6); d.text('Balance owing: ' + cur(Math.max(st.balance, 0)), W - M, y + 6, { align: 'right' });
+  const n = d.getNumberOfPages();
+  for (let i = 1; i <= n; i++) { d.setPage(i); d.setFont('helvetica', 'normal'); d.setFontSize(8); d.setTextColor(140); d.text(`${co.company_name}  ·  Page ${i} of ${n}`, W / 2, H - 24, { align: 'center' }); }
+  d.save(`Statement - ${c.name}.pdf`);
+}
+
+/* ═══════════ Settings ═══════════ */
+V.settings = async function () {
+  const admin = S.user.role === 'admin';
+  const tabs = admin ? [['company', 'Company'], ['theme', 'Appearance'], ['products', 'Insurance'], ['users', 'Users'], ['account', 'My account']] : [['theme', 'Appearance'], ['account', 'My account']];
+  if (!tabs.some(t => t[0] === S.stab)) S.stab = tabs[0][0];
+  main().innerHTML = `<div class="pagehead"><div><h1>Settings</h1></div></div>
+    <div class="pills" id="pl">${tabs.map(t => `<button data-t="${t[0]}" class="${S.stab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div><div id="sb"></div>`;
+  $('#pl').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.stab = b.dataset.t; $$('#pl button').forEach(x => x.classList.toggle('on', x === b)); ST[S.stab](); };
+  ST[S.stab]();
+};
+const ST = {};
+
+ST.company = function () {
+  const s = S.settings;
+  $('#sb').innerHTML = `<div class="card" style="max-width:640px"><h2 style="margin-bottom:12px">Company details</h2><div id="cf">
+    ${field('Company name *', 'company_name', s.company_name)}${field('Tagline', 'tagline', s.tagline)}
+    <div class="two">${field('Email', 'email', s.email, 'email')}${field('Phone', 'phone', s.phone, 'tel')}</div>
+    ${field('Address', 'address', s.address)}
+    <div class="two">${field('Registration number', 'reg_no', s.reg_no)}${field('Website', 'website', s.website)}</div>
+    <div class="two">${field('Currency symbol', 'currency', s.currency, 'text', 'maxlength="5"')}${field('Logo image URL', 'logo_url', s.logo_url, 'url', 'placeholder="https://…"')}</div>
+    <button class="btn primary" id="sv">Save changes</button></div></div>`;
+  $('#sv').onclick = e => submit(e.currentTarget, async () => {
+    S.settings = await api('settingsSave', { settings: formData($('#cf')) }); brand(); toast('Company details saved');
+  });
+};
+
+ST.theme = function () {
+  const cur = document.documentElement.dataset.theme;
+  $('#sb').innerHTML = `<div class="card"><h2>Theme</h2><p class="muted" style="margin:4px 0 14px">${S.user.role === 'admin' ? 'Your choice also becomes the default for new sign-ins.' : 'Choose how the platform looks on this device.'}</p>
+    <div class="themes">${THEMES.map(t => `<button class="theme ${t.id === cur ? 'on' : ''}" data-t="${t.id}"><i style="background:${t.c}"></i><b>${t.name}</b></button>`).join('')}</div></div>`;
+  $('.themes').onclick = async e => {
+    const b = e.target.closest('.theme'); if (!b) return;
+    applyTheme(b.dataset.t); localStorage.setItem('ei_theme_user', '1'); ST.theme();
+    if (S.user.role === 'admin') { try { S.settings = await api('settingsSave', { settings: { theme: b.dataset.t } }, { pill: true }); } catch (err) { toast(err.message, 'err'); } }
+  };
+};
+
+ST.products = async function () {
+  const list = await api('productsList', { all: true });
+  S.products = list.filter(p => p.status === 'Active');
+  $('#sb').innerHTML = `<div class="toolbar" style="justify-content:space-between"><span class="muted">${list.length} insurance${list.length === 1 ? '' : 's'} available to assign</span><button class="btn primary" id="np">${ic('plus')}New insurance</button></div>
+    <div class="card" style="padding:0">${list.length ? list.map(p => `<div class="row" data-id="${esc(p.id)}"><div class="av">${ic('shield')}</div><div class="grow"><b>${esc(p.name)}</b><small>${esc(p.category)}${p.description ? ' · ' + esc(p.description) : ''}</small></div><div class="amt">${money(p.premium)}<small>per ${per(p.frequency)}</small></div>${badge(p.status)}</div>`).join('') : '<div class="empty">No insurance created yet. Add your first one.</div>'}</div>`;
+  $('#np').onclick = () => productForm();
+  $$('#sb .row').forEach(r => r.onclick = () => productForm(list.find(p => p.id === r.dataset.id)));
+};
+
+function productForm(p) {
+  p = p || {};
+  const cats = ['Life', 'Funeral', 'Health', 'Vehicle', 'Home', 'Business', 'Travel', 'Education'];
+  modal({
+    title: p.id ? 'Edit insurance' : 'New insurance',
+    body: `<div id="pf">${field('Insurance name *', 'name', p.name, 'text', 'placeholder="e.g. Life Cover Plus"')}
+      <div class="field"><label>Category *</label><input name="category" list="cats" value="${esc(p.category || '')}" placeholder="Life, Health, Vehicle…"><datalist id="cats">${cats.map(c => `<option value="${c}">`).join('')}</datalist></div>
+      <div class="two">${field('Premium amount *', 'premium', p.premium || '', 'number', 'min="0" step="0.01" inputmode="decimal"')}
+      <div class="field"><label>Charged</label><select name="frequency"><option value="monthly" ${p.frequency !== 'yearly' ? 'selected' : ''}>Per month</option><option value="yearly" ${p.frequency === 'yearly' ? 'selected' : ''}>Per year</option></select></div></div>
+      <div class="field"><label>Description</label><textarea name="description">${esc(p.description || '')}</textarea></div>
+      <div class="field"><label>Status</label><select name="status"><option ${p.status !== 'Inactive' ? 'selected' : ''}>Active</option><option ${p.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select></div></div>`,
+    actions: [{ label: 'Cancel', run: o => o.remove() }, {
+      label: 'Save', cls: 'primary', run: (o, b) => submit(b, async () => {
+        await api('productSave', { ...formData($('#pf', o)), id: p.id }); o.remove(); toast('Insurance saved'); ST.products();
+      })
+    }]
+  });
+}
+
+ST.users = async function () {
+  const list = await api('usersList');
+  $('#sb').innerHTML = `<div class="toolbar" style="justify-content:space-between"><span class="muted">${list.length} user${list.length === 1 ? '' : 's'}</span><button class="btn primary" id="nu">${ic('plus')}New user</button></div>
+    <div class="card" style="padding:0">${list.map(u => `<div class="row" data-id="${esc(u.id)}"><div class="av">${esc(initials(u.name))}</div><div class="grow"><b>${esc(u.name)}</b><small>@${esc(u.username)} · ${u.role === 'admin' ? 'Administrator' : 'Staff'}</small></div>${badge(u.status)}${ic('chev')}</div>`).join('')}</div>`;
+  $('#nu').onclick = () => userForm();
+  $$('#sb .row').forEach(r => r.onclick = () => userForm(list.find(u => u.id === r.dataset.id)));
+};
+
+function userForm(u) {
+  const isNew = !u; u = u || {};
+  modal({
+    title: isNew ? 'New user' : 'Edit user',
+    body: `<div id="uf">${field('Full name *', 'name', u.name)}
+      ${isNew ? field('Username *', 'username', '', 'text', 'autocapitalize="none" autocomplete="off"') + field('Password *', 'password', '', 'password', 'autocomplete="new-password"') : `<div class="muted" style="margin-bottom:12px">Username: @${esc(u.username)}</div>`}
+      <div class="two"><div class="field"><label>Role</label><select name="role"><option value="staff" ${u.role !== 'admin' ? 'selected' : ''}>Staff</option><option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Administrator</option></select></div>
+      <div class="field"><label>Status</label><select name="status"><option ${u.status !== 'Disabled' ? 'selected' : ''}>Active</option><option ${u.status === 'Disabled' ? 'selected' : ''}>Disabled</option></select></div></div>
+      ${isNew ? '' : `<button class="btn sm" id="rp" type="button">Reset password</button>`}</div>`,
+    actions: [{ label: 'Cancel', run: o => o.remove() }, {
+      label: isNew ? 'Create user' : 'Save', cls: 'primary', run: (o, b) => submit(b, async () => {
+        await api('userSave', { ...formData($('#uf', o)), id: u.id }); o.remove(); toast('User saved'); ST.users();
+      })
+    }]
+  });
+  if (!isNew) $('#rp').onclick = () => modal({
+    title: 'Reset password', body: `<div id="rf">${field('New password', 'password', '', 'password', 'autocomplete="new-password"')}</div>`,
+    actions: [{ label: 'Cancel', run: o => o.remove() }, { label: 'Set password', cls: 'primary', run: (o, b) => submit(b, async () => { await api('userPassword', { id: u.id, password: $('[name=password]', o).value }); o.remove(); toast('Password updated'); }) }]
+  });
+}
+
+ST.account = function () {
+  $('#sb').innerHTML = `<div class="card" style="max-width:460px"><h2>${esc(S.user.name)}</h2><div class="muted" style="margin-bottom:14px">@${esc(S.user.username)} · ${S.user.role === 'admin' ? 'Administrator' : 'Staff'}</div>
+    <div id="pw">${field('Current password', 'oldPassword', '', 'password', 'autocomplete="current-password"')}${field('New password', 'newPassword', '', 'password', 'autocomplete="new-password"')}
+    <button class="btn primary" id="cp">Change password</button></div></div>`;
+  $('#cp').onclick = e => submit(e.currentTarget, async () => {
+    await api('passwordChange', formData($('#pw'))); $$('#pw input').forEach(i => i.value = ''); toast('Password changed');
+  });
+};
+
+boot();
+</script>
+</body>
+</html>
